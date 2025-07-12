@@ -1,0 +1,346 @@
+﻿@using AttendanceApp.Shared.Enums
+
+@model EmployeeDashboardVM
+
+
+@{
+    ShiftType? currentShift = ViewBag.CurrentShift as ShiftType?;
+    DateTime? baseDate = ViewBag.BaseDate as DateTime?;
+
+}
+@{
+    ViewData["Title"] = "Employee Dashboard";
+}
+
+
+<div class="logte" style="display:flex;gap:45%">
+    <h2>Welcome, @Model.Employee.FullName</h2>
+    <form asp-controller="Account" asp-action="Logout" method="post" id="logoutform"><button type="submit" @* class=" btn btn-link" *@ class="btn btn-success" style="font-size:15px">Logout</button></form>
+</div>
+<p>@User.Identity.Name</p>
+<h4>Today's Shift: <b>@Model.CurrentShift</b> (@Model.BaseDate.ToString("yyyy-MM-dd"))</h4>
+
+
+@if (Model.ExistingRequest != null)
+{
+    <div class="alert alert-info">
+        @if (Model.ExistingRequest.Status == "Pending")
+        {
+            <p>📨 Attendance request sent. <strong>Waiting for admin approval...</strong></p>
+        }
+        else if (Model.ExistingRequest.Status == "Accepted")
+        {
+            <p>✅ Your attendance is marked as <strong>Present</strong>.</p>
+        }
+        else if (Model.ExistingRequest.Status == "Rejected")
+        {
+            <p>❌ Your attendance request was <strong>Rejected</strong>.</p>
+        }
+    </div> 
+}
+<hr /> 
+
+
+@functions {
+    public class ShiftTimeRange
+    {
+        public ShiftType Shift { get; set; }
+        public TimeSpan Start { get; set; }
+        public TimeSpan End { get; set; }
+
+        public DateTime GetStartDateTime(DateTime baseDate)
+        {
+            return baseDate.Add(Start);
+        }
+
+        public DateTime GetEndDateTime(DateTime baseDate)
+        {
+            // If shift ends before it starts, it means it crosses midnight (e.g., night shift)
+            return Start < End
+                ? baseDate.Add(End)
+                : baseDate.AddDays(1).Add(End);
+        }
+    }
+
+    ShiftTimeRange GetShiftTime(ShiftType shift)
+    {
+        return shift switch
+        {
+            ShiftType.Morning => new ShiftTimeRange
+                {
+                    Shift = ShiftType.Morning,
+                    Start = TimeSpan.FromHours(8),
+                    End = TimeSpan.FromHours(14)
+                },
+            ShiftType.Evening => new ShiftTimeRange
+                {
+                    Shift = ShiftType.Evening,
+                    Start = TimeSpan.FromHours(14),
+                    End = TimeSpan.FromHours(20)
+                },
+            ShiftType.Night => new ShiftTimeRange
+                {
+                    Shift = ShiftType.Night,
+                    Start = TimeSpan.FromHours(20),
+                    End = TimeSpan.FromHours(8)
+                },
+            _ => null
+        };
+    }
+}
+
+@{
+    var now = DateTime.Now.TimeOfDay;
+}
+
+<h3>Attendance Request</h3>
+<h5>Today's Current Shift: @Model.CurrentShift (@Model.BaseDate.ToString("yyyy-MM-dd"))</h5>
+
+
+@foreach (ShiftType shift in Enum.GetValues(typeof(ShiftType)))
+{
+    var alreadyMarked = Model.MarkedShifts.Contains(shift);
+    var isPending = Model.PendingRequests.Contains(shift);
+    var isCurrent = shift == Model.CurrentShift;
+    var shiftTime = GetShiftTime(shift);
+    var isAfterCurrent = shift > Model.CurrentShift;
+
+
+    <div class="mb-3">
+        <strong>@shift Shift</strong> -
+
+        @if (alreadyMarked)
+        {
+            
+           if (now >= shiftTime.Start && now <= shiftTime.End)
+            {
+                
+                
+                  <button class="btn btn-secondary" disabled>✅currently working.</button>
+                    
+               
+            }
+            else if(now>shiftTime.End)
+            {
+                
+                <button class="btn btn-secondary" disabled>✅Marked As Present.</button>
+            }
+         
+        } 
+        else if (isPending)
+        {
+
+            <button class="btn btn-secondary" disabled>🕐 Request Pending</button>
+            @* <span class="text-warning">📨 Attendance request sent. <strong>Waiting for admin approval...</strong></span> *@
+        }
+        else if (Model.ExistingRequest != null && Model.ExistingRequest.Shift == shift)
+        {
+            
+            if (Model.ExistingRequest.Status == "Rejected")
+            {
+                <button class="btn btn-secondary" disabled>❌ Rejected</button>
+            }
+            
+        }
+        else if (isCurrent && shift==Model.CurrentShift)
+        {
+           if(Model.MarkedShifts.Count==2)
+           {
+                <button class="btn btn-outline-secondary" disabled>Unavailable</button>
+           }
+           else
+           {
+                if (Model.MarkedShifts.Count == 1)
+                {
+                    <form id="AttedanceForm" asp-action="SendAttendanceRequest" method="post">
+                        <input type="hidden" name="Shift" value="@shift" />
+                        <input type="hidden" name="BaseDate" value="@Model.BaseDate.ToString("yyyy-MM-dd")" />
+                        @* <label>Select Section</label>
+                    <select name="Section" class="form-control mb-2" required>
+                        <option value="">Select</option>
+                        <option value="ICU">ICU</option>
+                        <option value="Outdoor">Outdoor</option>
+                    </select> *@
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="Section" value="ICU" id="sectionICU" required>
+                            <label class="form-check-label" for="sectionICU">ICU</label>
+
+                        </div>
+
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="Section" value="Outdoor" id="sectionOutdoor">
+                            <label class="form-check-label" for="sectionOutdoor">Outdoor</label>
+                        </div><br />
+                        <button type="submit" class="btn btn-primary">Ask for Overtime</button>
+
+
+                    </form>
+                }
+                else
+                {
+                    <form id="AttedanceForm" asp-action="SendAttendanceRequest" method="post">
+                        <input type="hidden" name="Shift" value="@shift" />
+                        <input type="hidden" name="BaseDate" value="@Model.BaseDate.ToString("yyyy-MM-dd")" />
+
+                        @* <select name="Section" class="form-control mb-2" required>
+                        <option value="">Select</option>
+                        <option value="ICU">ICU</option>
+                        <option value="Outdoor">Outdoor</option>
+                    </select> *@
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="Section" value="ICU" id="sectionICU" required>
+                            <label class="form-check-label" for="sectionICU">ICU</label>
+
+                        </div>
+
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="Section" value="Outdoor" id="sectionOutdoor">
+                            <label class="form-check-label" for="sectionOutdoor">Outdoor</label>
+                        </div><br />
+                        <button type="submit" class="btn btn-primary">Ask for Attendance</button>
+
+                    </form>
+
+                }
+           }
+        
+            
+        }
+        else if (Model.MarkedShifts.Count == 1 && isAfterCurrent&& shiftTime.Start > now)
+        {
+             
+
+           @*  <form asp-action="SendAttendanceRequest" method="post" class="d-inline">
+                <input type="hidden" name="Shift" value="@shift" />
+                <input type="hidden" name="BaseDate" value="@Model.BaseDate.ToString("yyyy-MM-dd")" />
+                <input type="hidden" name="Section" value="Outdoor" /> <!-- or bind dynamically -->
+
+                <button type="button" id="@btnId" class="btn btn-warning"
+                        onclick="checkShiftStartTime('@shiftTime.Start.ToString("yyyy-MM-ddTHH:mm:ss")', '@btnId')">
+                    Request Overtime
+                </button>
+            </form> *@ 
+                   <button class="btn btn-secondary" disabled>Ask for Overtime</button>
+                   @* <span class="text-warning">🕐 Wait Until this Shift Start</span> *@
+            
+            
+            
+        }
+        else
+        {
+            <button class="btn btn-outline-secondary" disabled>Unavailable</button>
+        }
+    </div>
+}
+@if (Model.Stats != null && Model.Stats.MonthlyStats.Any())
+{
+    <h4 class="mt-4">📊 Monthly Attendance Summary @DateTime.Now.Year</h4>
+
+   
+    <div class="table-responsive" id="table-scroll-container">
+        <table class="table table-bordered" id="table1" >
+            <thead class="table-dark">
+                <tr>
+                    <th>Month</th>
+                    <th>Present</th>
+                    <th>Overtime</th>
+                    <th>Absent</th>
+                    <th>Total Present</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < Model.Stats.MonthlyStats.Count; i++)
+                {
+                    var stat = Model.Stats.MonthlyStats[i];
+                    <tr data-month="@stat.MonthYear">
+                        <td>@stat.MonthYear</td>
+                        <td>@stat.Present</td>
+                        <td>@stat.Overtime</td>
+                        <td>@stat.Absent</td>
+                        <td>@(stat.Present + stat.Overtime)</td>
+                        <td>
+                            <a class="btn btn-primary btn-sm view"
+                               asp-controller="Employee"
+                               asp-action="MonthlyDetails"
+                               asp-route-userId="@Model.Employee.Id"
+                               asp-route-month="@stat.Month"
+                               asp-route-year="@stat.Year">
+                                View Details
+                            </a>
+                        </td>
+                    </tr>
+
+                    <!-- Collapsible Day-wise Shift Table -->
+                }
+            </tbody>
+        </table>
+    </div>
+    <p class="text-danger">Note:  Attendance In Table is Only Up To Yesterday</p>
+
+}
+else
+{
+    <div class="alert alert-info">No attendance stats found for this employee.</div>
+}
+
+@functions {
+    public int GetMonthIndex(string monthName)
+    {
+        return monthName switch
+        {
+            "January" => 1,
+            "February" => 2,
+            "March" => 3,
+            "April" => 4,
+            "May" => 5,
+            "June" => 6,
+            "July" => 7,
+            "August" => 8,
+            "September" => 9,
+            "October" => 10,
+            "November" => 11,
+            "December" => 12,
+            _ => DateTime.Now.Month
+        };
+    }
+}
+
+@section Scripts {
+    <script>
+        function checkShiftStartTime(shiftStart, btnId) {
+            const now = new Date();
+            const shiftTime = new Date(shiftStart);
+
+            if (now < shiftTime) {
+                alert("⏳ Please wait until the shift start time.");
+                return false;
+            }
+
+            document.getElementById(btnId).closest("form").submit();
+        }
+    </script>
+    <script>
+      function submitWithAlert() {
+        alert("✅ Request sent successfully!");
+        document.getElementById("AttendanceForm").submit();
+      }
+    </script>
+     <script>
+        window.addEventListener("load", function () {
+            const container = document.getElementById("table-scroll-container");
+            const table = document.getElementById("table1");
+
+            if (container && table) {
+                // Scroll to the last part of the table (rightmost)
+                container.scrollLeft = table.scrollWidth - container.clientWidth;
+            }
+        });
+    </script>
+}
+
+
+
+
+
+

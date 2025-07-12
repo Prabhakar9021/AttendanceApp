@@ -1,0 +1,63 @@
+html {
+  font-size: 14px;
+}
+.stikcy-top{
+    position:sticky;
+    top:0;
+    z-index:1030;
+}
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+@media (max-width: 768px) {
+   
+  
+}
+@media (max-width: 412px){
+    button.mybtn{
+        font-size:10px;
+        padding:4px 10px;
+    }
+}
+@media (max-width:372px) {
+    button.mybtn1 {
+        font-size: 11px;
+        padding: 2px 8px;
+    }
+    a.mybtn1 {
+        font-size: 11px;
+        padding: 2px 8px;
+    }
+}
+@media (min-width:535px){
+    div.logt{
+        display:flex;
+        justify-content:space-between;
+       
+    }
+    a.view{
+        font-size:12px;
+        padding:2px 8px;
+    }
+}
+@media (min-width:445px) {
+    div.logte {
+        display: flex;
+        justify-content: space-between;
+    }
+}

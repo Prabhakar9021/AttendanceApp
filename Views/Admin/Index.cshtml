@@ -1,0 +1,79 @@
+﻿@model AdminDashboardVM
+@{
+	ViewData["Title"] = "Admin Dashboard";
+}
+<div class="logt" style="display:flex;gap:50%">
+    <h2>welcome admin</h2>
+   
+    <form asp-controller="Account" asp-action="Logout" method="post" id="logoutform">
+        <button type="submit" class="btn btn-success" style="font-size:15px" class=" btn btn-link">Logout</button>
+    </form>
+    
+</div>
+<br />
+<a asp-action="RegisterEmployee" asp-controller="Admin" class="btn btn-success" style="font-size:15px;">Register Employee</a>
+<hr />
+<h3>Registered Employees</h3>
+<div class="table-responsive" id="table-scroll-container" style="max-height:500px;overflow-y:auto;">
+    <table class="table table-bordered table-striped" id="table1">
+        <thead>
+            <tr>
+                <th class="hide">#</th>
+                <th>Employee ID</th>
+                <th class="hide">Email</th>
+                <th class="hide">Phone</th>
+                <th class="last-cols">Full Name</th>
+                <th class="last-cols">Request</th>
+                <th class="last-cols">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Employees != null && Model.Employees.Count > 0)
+            {
+                int i = 1;
+                foreach (var emp in Model.Employees)
+                {
+                    var request = Model.PendingRequests.FirstOrDefault(r => r.UserId == emp.Id);
+                    <tr>
+                        <td class="hide">@i</td>
+                        <td>@emp.EmployeeId</td>
+                        <td class ="hide">@emp.Email</td>
+                        <td class="hide">@emp.PhoneNumber</td>
+                        <td class="last-cols">@emp.FullName</td>
+                        <td class="last-cols">
+                            @if (request != null)
+                            {
+                                <span class="badge bg-warning">Request: @request.Shift - @request.Section</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">No Request</span>
+                            }
+                        </td>
+                        <td class="last-cols">
+                            <a asp-action="ViewEmployee" asp-route-id="@emp.Id" class="btn btn-info btn-sm">View</a>
+                        </td>
+                    </tr>
+                    i++;
+                }
+            }
+            else
+            {
+                <tr><td colspan="5">No employees found.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+@section Scripts {
+    <script>
+        window.addEventListener("load", function () {
+            const container = document.getElementById("table-scroll-container");
+            const table = document.getElementById("table1");
+
+            if (container && table) {
+                // Scroll to the last part of the table (rightmost)
+                container.scrollLeft = table.scrollWidth - container.clientWidth;
+            }
+        });
+    </script>
+}

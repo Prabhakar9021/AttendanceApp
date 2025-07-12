@@ -1,0 +1,56 @@
+﻿@model MonthlyDetailVM
+
+<h2>📅 Day-wise Shift Details for @Model.Employee.FullName - @Model.Month @Model.Year</h2>
+
+<table class="table table-bordered mt-4">
+    <thead class="table-dark">
+        <tr>
+            <th>Date</th>
+            <th>Morning</th>
+            <th>Evening</th>
+            <th>Night</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var day in Model.ShiftDays)
+        {
+            <tr>
+                <td>@day.BaseDate.ToString("yyyy-MM-dd")</td>
+
+                @if (day.IsAbsent)
+                {
+                    <td colspan="3" class="text-danger fw-bold text-center">Absent</td>
+                }
+                else
+                {
+                    foreach (var shift in day.Shifts)
+                    {
+                        <td>
+                            @if (!string.IsNullOrEmpty(shift.Status))
+                            {
+                                <span class="fw-bold">
+                                    @(shift.Status == "Present" ? "✅ Present" : "⏱ Overtime")
+                                </span>
+                                <br />
+                                <small class="text-muted">(@shift.Section)</small>
+                            }
+                            else
+                            {
+                                <span class="text-muted"></span>
+                            }
+                        </td>
+                    }
+                }
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-action="ExportMonthlyDetailsToExcel"
+   asp-controller="Employee"
+   asp-route-id="@Model.Employee.Id"
+   asp-route-month="@Model.Month"
+   asp-route-year="@Model.Year"
+   class="btn btn-success mb-3">
+    📥 Export to Excel
+</a>

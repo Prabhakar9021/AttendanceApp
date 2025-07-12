@@ -1,0 +1,84 @@
+﻿@model LoginViewModel
+
+
+
+<div style="background-color:#1B3C53;color:white;padding-inline:50px;border-radius:15px;">
+    <h2 style="text-align:center">Login</h2>
+    <form asp-action="Login" method="post" onsubmit="return validateLocation()" >
+        <div asp-validation-summary="ModelOnly"></div>
+    
+
+        <div class="mb-3 w-75" style="align-items:center">
+            <label asp-for="Email" class="form-label"></label>
+            <input asp-for="Email" class="form-control" />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3 w-75">
+            <label asp-for="Password" class="form-label" style="text-align:center"></label>
+            <input asp-for="Password" type="password" class="form-control " />
+            <span asp-validation-for="Password" class="text-danger"></span>
+        </div>
+
+        <div>
+            <label asp-for="RememberMe" class="form-label"></label>
+            <input asp-for="RememberMe" type="checkbox" />
+        </div>
+        <input type="hidden" id="Latitude" name="Latitude" />
+        <input type="hidden" id="Longitude" name="Longitude" />
+        <input type="hidden" id="deviceId" name="deviceId" />
+        <button type="submit" id="loginBtn" onclick="return validateLocation()" class="btn btn-success mb-3">Login</button>
+    </form>
+</div>
+@section Scripts 
+{
+    <script>
+        navigator.geolocation.getCurrentPosition(function (position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+
+            document.getElementById("Latitude").value = lat;
+            document.getElementById("Longitude").value = lon;
+
+            console.log("📍 Latitude:", lat);
+            console.log("📍 Longitude:", lon);
+        }, function (error) {
+            alert("❌ Location access denied. Please allow location to continue.");
+        });
+    </script>
+
+
+
+    @Html.Raw("<script src='https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3.3.6/dist/fp.min.js'></script>")
+
+    <script>
+        window.onload = function () {
+            setTimeout(async function () {
+                try {
+                    if (typeof FingerprintJS !== 'undefined') {
+                        const fp = await FingerprintJS.load();
+                        const result = await fp.get();
+                        const visitorId = result.visitorId;
+
+                        // Set to hidden input
+                        const input = document.getElementById("deviceId");
+                        if (input) {
+                            input.value = visitorId;
+                            console.log("✅ Device ID:", visitorId);
+                        } else {
+                            console.warn("Hidden field not found");
+                        }
+                    } else {
+                        console.error("FingerprintJS not loaded");
+                    }
+                } catch (e) {
+                    console.error("Fingerprint error:", e);
+                }
+            }, 300);
+        };
+    </script>
+}
+
+   
+
+ 
