@@ -19,8 +19,8 @@ namespace AttendanceApp.Data
             }
 
             // Create single admin
-            string adminEmail = "ajaypatil@admin1";
-            string adminPassword = "AVpatil@only1";
+            string adminEmail = "Admin@gmail.com";
+            string adminPassword = "Admin@123";
 
             var admin = await userManager.FindByEmailAsync(adminEmail);
             if (admin == null)
